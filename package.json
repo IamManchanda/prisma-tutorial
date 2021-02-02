@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon app.js",
     "studio": "npx prisma studio",
+    "migrate": "npx prisma migrate dev --preview-feature",
+    "generate": "npx prisma generate",
     "start": "node app.js"
   },
   "keywords": [],
