@@ -65,7 +65,9 @@ app.post(
 
 app.get("/users", async function readUsers(_req, res) {
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({
+      include: { posts: true },
+    });
     return res.status(200).json(users);
   } catch (error) {
     console.log(error);
