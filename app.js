@@ -8,18 +8,6 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 
-const userValidationRules = [
-  body("email")
-    .isLength({ min: 1 })
-    .withMessage("Email must be not empty")
-    .isEmail()
-    .withMessage("Email must be a valid email address"),
-  body("name").isLength({ min: 1 }).withMessage("Name must be not empty"),
-  body("role")
-    .isIn(["USER", "ADMIN", "SUPERADMIN", undefined])
-    .withMessage("Role must be one of 'USER', 'ADMIN', or 'SUPERADMIN'"),
-];
-
 const simpleValidationResult = validationResult.withDefaults({
   formatter: (error) => error.msg,
 });
@@ -31,6 +19,18 @@ const checkForErrors = (req, res, next) => {
   }
   next();
 };
+
+const userValidationRules = [
+  body("email")
+    .isLength({ min: 1 })
+    .withMessage("Email must be not empty")
+    .isEmail()
+    .withMessage("Email must be a valid email address"),
+  body("name").isLength({ min: 1 }).withMessage("Name must be not empty"),
+  body("role")
+    .isIn(["USER", "ADMIN", "SUPERADMIN", undefined])
+    .withMessage("Role must be one of 'USER', 'ADMIN', or 'SUPERADMIN'"),
+];
 
 app.post(
   "/users",
@@ -155,6 +155,40 @@ app.delete("/users/:uuid", async function deleteUser(req, res) {
     });
   }
 });
+
+const postValidationRules = [
+  body("title").isLength({ min: 1 }).withMessage("Title must be not empty"),
+];
+
+app.post(
+  "/posts",
+  postValidationRules,
+  checkForErrors,
+  async function createPost(req, res) {
+    const { title, body, userUuid } = req.body;
+    try {
+      const user = await prisma.user.findFirst({
+        where: { uuid: userUuid },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          user: "User not found",
+        });
+      }
+
+      const post = await prisma.post.create({
+        data: { title, body, user: { connect: { uuid: userUuid } } },
+      });
+      return res.status(200).json(post);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        error: "Something went wrong.",
+      });
+    }
+  },
+);
 
 app.listen(port, function bootApp() {
   console.log(`Server running on port ${port}`);
