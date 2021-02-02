@@ -192,7 +192,11 @@ app.post(
 
 app.get("/posts", async function readPosts(_req, res) {
   try {
-    const posts = await prisma.post.findMany();
+    const posts = await prisma.post.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
     return res.status(200).json(posts);
   } catch (error) {
     console.log(error);
