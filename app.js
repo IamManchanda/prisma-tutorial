@@ -38,10 +38,12 @@ app.post(
   checkForErrors,
   async function createUser(req, res) {
     const { name, email, role } = req.body;
+
     try {
       const existingUser = await prisma.user.findFirst({
         where: { email },
       });
+
       if (existingUser) {
         return res.status(400).json({
           email: "Email already exists",
@@ -72,6 +74,40 @@ app.get("/users", async function readUsers(_req, res) {
     });
   }
 });
+
+app.put(
+  "/users/:uuid",
+  userValidationRules,
+  checkForErrors,
+  async function updateUser(req, res) {
+    const { name, email, role } = req.body;
+    const { uuid } = req.params;
+
+    try {
+      let user = await prisma.user.findFirst({
+        where: { uuid },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          user: "User not found",
+        });
+      }
+
+      user = await prisma.user.update({
+        where: { uuid },
+        data: { name, email, role },
+      });
+
+      return res.status(200).json(user);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        error: "Something went wrong.",
+      });
+    }
+  },
+);
 
 app.listen(port, function bootApp() {
   console.log(`Server running on port ${port}`);
