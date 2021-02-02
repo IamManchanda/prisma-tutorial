@@ -75,6 +75,28 @@ app.get("/users", async function readUsers(_req, res) {
   }
 });
 
+app.get("/users/:uuid", async function findUser(req, res) {
+  const { uuid } = req.params;
+  try {
+    const user = await prisma.user.findFirst({
+      where: { uuid },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        user: "User not found",
+      });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: "Something went wrong.",
+    });
+  }
+});
+
 app.put(
   "/users/:uuid",
   userValidationRules,
@@ -108,6 +130,31 @@ app.put(
     }
   },
 );
+
+app.delete("/users/:uuid", async function deleteUser(req, res) {
+  const { uuid } = req.params;
+  try {
+    const user = await prisma.user.findFirst({
+      where: { uuid },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        user: "User not found",
+      });
+    }
+
+    await prisma.user.delete({ where: { uuid } });
+    return res.status(200).json({
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: "Something went wrong.",
+    });
+  }
+});
 
 app.listen(port, function bootApp() {
   console.log(`Server running on port ${port}`);
