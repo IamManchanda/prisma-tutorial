@@ -1,6 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
-const express = require("express");
-const { body, validationResult } = require("express-validator");
+import { PrismaClient } from "@prisma/client";
+import express, { NextFunction, Request, Response } from "express";
+import { body, validationResult } from "express-validator";
 
 const port = process.env.PORT || 5000;
 const prisma = new PrismaClient();
@@ -12,7 +12,7 @@ const simpleValidationResult = validationResult.withDefaults({
   formatter: (error) => error.msg,
 });
 
-const checkForErrors = (req, res, next) => {
+const checkForErrors = (req: Request, res: Response, next: NextFunction) => {
   const errors = simpleValidationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json(errors.mapped());
@@ -36,7 +36,7 @@ app.post(
   "/users",
   userValidationRules,
   checkForErrors,
-  async function createUser(req, res) {
+  async function createUser(req: Request, res: Response) {
     const { name, email, role } = req.body;
 
     try {
@@ -63,7 +63,7 @@ app.post(
   },
 );
 
-app.get("/users", async function readUsers(_req, res) {
+app.get("/users", async function readUsers(_req: Request, res: Response) {
   try {
     const users = await prisma.user.findMany({
       include: { posts: true },
@@ -77,7 +77,7 @@ app.get("/users", async function readUsers(_req, res) {
   }
 });
 
-app.get("/users/:uuid", async function findUser(req, res) {
+app.get("/users/:uuid", async function findUser(req: Request, res: Response) {
   const { uuid } = req.params;
   try {
     const user = await prisma.user.findFirst({
@@ -103,7 +103,7 @@ app.put(
   "/users/:uuid",
   userValidationRules,
   checkForErrors,
-  async function updateUser(req, res) {
+  async function updateUser(req: Request, res: Response) {
     const { name, email, role } = req.body;
     const { uuid } = req.params;
 
@@ -133,30 +133,33 @@ app.put(
   },
 );
 
-app.delete("/users/:uuid", async function deleteUser(req, res) {
-  const { uuid } = req.params;
-  try {
-    const user = await prisma.user.findFirst({
-      where: { uuid },
-    });
+app.delete(
+  "/users/:uuid",
+  async function deleteUser(req: Request, res: Response) {
+    const { uuid } = req.params;
+    try {
+      const user = await prisma.user.findFirst({
+        where: { uuid },
+      });
 
-    if (!user) {
-      return res.status(404).json({
-        user: "User not found",
+      if (!user) {
+        return res.status(404).json({
+          user: "User not found",
+        });
+      }
+
+      await prisma.user.delete({ where: { uuid } });
+      return res.status(200).json({
+        message: "User deleted successfully",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        error: "Something went wrong.",
       });
     }
-
-    await prisma.user.delete({ where: { uuid } });
-    return res.status(200).json({
-      message: "User deleted successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      error: "Something went wrong.",
-    });
-  }
-});
+  },
+);
 
 const postValidationRules = [
   body("title").isLength({ min: 1 }).withMessage("Title must be not empty"),
@@ -166,7 +169,7 @@ app.post(
   "/posts",
   postValidationRules,
   checkForErrors,
-  async function createPost(req, res) {
+  async function createPost(req: Request, res: Response) {
     const { title, body, userUuid } = req.body;
     try {
       const user = await prisma.user.findFirst({
@@ -192,7 +195,7 @@ app.post(
   },
 );
 
-app.get("/posts", async function readPosts(_req, res) {
+app.get("/posts", async function readPosts(_req: Request, res: Response) {
   try {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
